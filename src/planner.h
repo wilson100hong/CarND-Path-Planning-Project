@@ -142,7 +142,7 @@ private:
     return dist;
   }
 
-  // Cvonerts |lane| (index) to Frenet d-value.
+  // Converts |lane| to Frenet d-value.
   double LaneToD(int lane) {
     return lane * 4.0 + 2.0;
   }
@@ -208,11 +208,6 @@ private:
   // Number of steps extended for refernce line and step distance (in s-value).
   size_t NUM_REF_STEP = 3;
   double REF_STEP_S = 30.0; 
-
-  // Safety fence to front, side front and side rear vehicles (in s-value).
-  double FRONT_FENCE_S = MAX_SPEED * 1.5;
-  // double SIDE_FRONT_FENCE_S = 15.0;
-  // double SIDE_REAR_FENCE = 10.0;
 };
 
 Polyline Planner::Plan(
@@ -226,7 +221,7 @@ Polyline Planner::Plan(
   
   // Generate trajectory on |track_lane_|.
   const double target_speed = GetTargetSpeed(track_lane_, ego_car, vehicles);
-  std::cout << "target speed: " << target_speed << std::endl;
+  
 
   Polyline trajectory = CreateTrajectory(prev_path, ego_car, track_lane_, target_speed);
 
@@ -244,6 +239,8 @@ Polyline Planner::Plan(
     return trajectory;
   }
 
+  std::cout << "need to change lane" << std::endl;
+
   // If speed is too low, try to find better candidate trajectoies.
   map<int, Polyline> lane_trajectories;
   lane_trajectories.emplace(track_lane_, std::move(trajectory));
@@ -255,7 +252,6 @@ Polyline Planner::Plan(
     }
 
     if (!CanChangeLane(cand_lane, ego_car, vehicles)) {
-      std::cout << "cannot change lane:  " << cand_lane << std::endl;
       // Too danger to make lange chagne, skipped.
       continue;
     }
@@ -401,9 +397,8 @@ bool Planner::CanChangeLane(int lane, const Pose& ego_car, const std::map<int, P
     if (abs(vehicle.d - target_d) > VEHICLE_WIDTH) continue;
     const double s_dist = DistanceInS(vehicle.s, ego_car.s);
     if (IsFurtherInS(vehicle.s, ego_car.s)) {
-      if (ego_car.speed >  vehicle.speed && s_dist < 16.0) fail_reason = 1;
+      if (ego_car.speed >  vehicle.speed && s_dist < 20.0) fail_reason = 1;
       if (ego_car.speed <= vehicle.speed && s_dist < 8.0) fail_reason = 2; 
-      
     } else {  // Ego car in front of vehicle
       if (ego_car.speed >  vehicle.speed && s_dist < 6.0) fail_reason = 3;
       if (ego_car.speed <= vehicle.speed && s_dist < 10.0) fail_reason = 4;
@@ -419,7 +414,7 @@ bool Planner::CanChangeLane(int lane, const Pose& ego_car, const std::map<int, P
 }
 
 double Planner::GetCost(int lane, const Polyline& trajectory, const Pose& ego_car) { 
-  // Comput the cost of speed.
+  // Compute the cost of speed.
   const int traj_size = trajectory.size();
   const Point& last_point = trajectory[traj_size - 1];
   const Point& last2_point = trajectory[traj_size - 2];
