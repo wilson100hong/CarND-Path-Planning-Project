@@ -221,7 +221,6 @@ Polyline Planner::Plan(
   
   // Generate trajectory on |track_lane_|.
   const double target_speed = GetTargetSpeed(track_lane_, ego_car, vehicles);
-  
 
   Polyline trajectory = CreateTrajectory(prev_path, ego_car, track_lane_, target_speed);
 
@@ -331,7 +330,7 @@ Polyline Planner::CreateTrajectory(
     ref_line[i] = ToRefCoord(ref_line[i], end_pose);
   }
 
-  // Fit refernce line to a c-spline.
+  // Fit refernce line to a spline.
   tk::spline spline;
   vector<double> ref_xs;
   vector<double> ref_ys;

@@ -1,21 +1,13 @@
 # CarND-Path-Planning-Project
 Self-Driving Car Engineer Nanodegree Program
-   
-### Simulator.
-You can download the Term3 Simulator which contains the Path Planning Project from the [releases tab (https://github.com/udacity/self-driving-car-sim/releases/tag/T3_v1.2).  
 
-To run the simulator on Mac/Linux, first make the binary file executable with the following command:
-```shell
-sudo chmod u+x {simulator_file_name}
-```
+---
 
-### Goals
-In this project your goal is to safely navigate around a virtual highway with other traffic that is driving +-10 MPH of the 50 MPH speed limit. You will be provided the car's localization and sensor fusion data, there is also a sparse map list of waypoints around the highway. The car should try to go as close as possible to the 50 MPH speed limit, which means passing slower traffic when possible, note that other cars will try to change lanes too. The car should avoid hitting other cars at all cost as well as driving inside of the marked road lanes at all times, unless going from one lane to another. The car should be able to make one complete loop around the 6946m highway. Since the car is trying to go 50 MPH, it should take a little over 5 minutes to complete 1 loop. Also the car should not experience total acceleration over 10 m/s^2 and jerk that is greater than 10 m/s^3.
+[//]: # (Image References)
 
-#### The map of the highway is in data/highway_map.txt
-Each waypoint in the list contains  [x,y,s,dx,dy] values. x and y are the waypoint's map coordinate position, the s value is the distance along the road to get to that waypoint in meters, the dx and dy values define the unit normal vector pointing outward of the highway loop.
+[image1]: ./images/youtube.png "Youtube"
 
-The highway's waypoints loop around so the frenet s value, distance along the road, goes from 0 to 6945.554.
+---
 
 ## Basic Build Instructions
 
@@ -23,53 +15,6 @@ The highway's waypoints loop around so the frenet s value, distance along the ro
 2. Make a build directory: `mkdir build && cd build`
 3. Compile: `cmake .. && make`
 4. Run it: `./path_planning`.
-
-Here is the data provided from the Simulator to the C++ Program
-
-#### Main car's localization Data (No Noise)
-
-["x"] The car's x position in map coordinates
-
-["y"] The car's y position in map coordinates
-
-["s"] The car's s position in frenet coordinates
-
-["d"] The car's d position in frenet coordinates
-
-["yaw"] The car's yaw angle in the map
-
-["speed"] The car's speed in MPH
-
-#### Previous path data given to the Planner
-
-//Note: Return the previous list but with processed points removed, can be a nice tool to show how far along
-the path has processed since last time. 
-
-["previous_path_x"] The previous list of x points previously given to the simulator
-
-["previous_path_y"] The previous list of y points previously given to the simulator
-
-#### Previous path's end s and d values 
-
-["end_path_s"] The previous list's last point's frenet s value
-
-["end_path_d"] The previous list's last point's frenet d value
-
-#### Sensor Fusion Data, a list of all other car's attributes on the same side of the road. (No Noise)
-
-["sensor_fusion"] A 2d vector of cars and then that car's [car's unique ID, car's x position in map coordinates, car's y position in map coordinates, car's x velocity in m/s, car's y velocity in m/s, car's s position in frenet coordinates, car's d position in frenet coordinates. 
-
-## Details
-
-1. The car uses a perfect controller and will visit every (x,y) point it recieves in the list every .02 seconds. The units for the (x,y) points are in meters and the spacing of the points determines the speed of the car. The vector going from a point to the next point in the list dictates the angle of the car. Acceleration both in the tangential and normal directions is measured along with the jerk, the rate of change of total Acceleration. The (x,y) point paths that the planner recieves should not have a total acceleration that goes over 10 m/s^2, also the jerk should not go over 50 m/s^3. (NOTE: As this is BETA, these requirements might change. Also currently jerk is over a .02 second interval, it would probably be better to average total acceleration over 1 second and measure jerk from that.
-
-2. There will be some latency between the simulator running and the path planner returning a path, with optimized code usually its not very long maybe just 1-3 time steps. During this delay the simulator will continue using points that it was last given, because of this its a good idea to store the last points you have used so you can have a smooth transition. previous_path_x, and previous_path_y can be helpful for this transition since they show the last points given to the simulator controller with the processed points already removed. You would either return a path that extends this previous path or make sure to create a new path that has a smooth transition with this last path.
-
-## Tips
-
-A really helpful resource for doing this project and creating smooth trajectories was using http://kluge.in-chemnitz.de/opensource/spline/, the spline function is in a single hearder file is really easy to use.
-
----
 
 ## Dependencies
 
@@ -92,54 +37,75 @@ A really helpful resource for doing this project and creating smooth trajectorie
     git checkout e94b6e1
     ```
 
-## Editor Settings
+## Project Rubrics
 
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
+### The car is able to drive at least 4.32 miles without incident.
+The car can drive more than 10+ miles without incident from simulation on my machine.
+However, since vehicles traffic is not deterministic, my experiments may not cover 100% cases.
 
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
+### The car drives according to the speed limit.
+The car drives around `MAX_SPEED` 21.5 m/s (~48.09413 mph) with +/- 0.2 m/s, which is less than the hard limit 22.352 m/s (50 mph).
 
-## Code Style
+### Max Acceleration and Jerk are not Exceeded.
+During simulation, max jerk < 5 m/s^3, and max acceleration < 5 m/s^3. Both are under the limits.
+This is done by limit the distance between adjacent waypoints in trajectory based on the car's current speed and target speed. See `planner.h` line 350 ~ 365.
 
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
+### Car does not have collisions.
+The car does not collide with other vehicles:
+- Car detects if there is any front vehicle in same lane closer than 43 m (distance driving 2 seconds in max speed). If so, ego_car will slow down to the same speed as the front vehicle and keep following without colliding with it.
+- When car prepares the change lane, it will make sure the candidate lane is "clear enough" to make lane changing without colliding vehicle in front or crash by rear vehicle. This is done by comparing the vehicles' speed and s-value on candidate lane with ego car. See `planner.h` `CanChangeLane()` line 391. 
 
-## Project Instructions and Rubric
+### The car stays in its lane, except for the time between changing lanes.
+The car follows the reference line in `KEEP_LANE` state. The reference line is created by fitting a pline to the waypoints provided by map. Waypoints are s-value `30` apart; the value is picked to make psline smooth enough while handles sharp turn well.
 
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
+### The vehicle must successfully drive a lap around the track.
+The simulation result shows the vehicle is stayed on drivable area. At some sharp turns it will infringe the curb lanes but still keep on track.
+
+### The car is able to change lanes
+The car will prepare to change lane when its target speed (maximum speed without collision) is less than a threshold `MIN_SPEED` (21.5 m/s, a little less than `MAX_SPEED`). It will create trajectories by trying change to candidate lane. If the trajectory is feasible (no collision) and has less cost than current lane, it will execute lane changing.
+
+The cost is a function to measure the performance of a trajectory, the lower the better. It considers
+- speed cost: the higher speed, the lower cost.
+- traveled distance: the more distance traveled (s-value advanced), the lower cost.  
+- lane cost: center lane (lane = 1) is prefereed when other cost is close. If speed and distance are almost the same, driving in the middle lane provides the most flexibility in lane changing.
 
 
-## Call for IDE Profiles Pull Requests
+## Trajectory Generation (a.k.a. path generation)
+Trajectory is generated by class `Planner`. It keeps the current state and the lane it should track. In every cycle,
+it uses the previous trajectory, ego car status and sensor fusion to create the best trajectory.
 
-Help your fellow students!
+1. Truncate the previous trajectory to `STITCH_SIZE`. This are waypoints to initalize new trajectory. `STITCH_SIZE = 50` means it will keep at most 50 points.
 
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to ensure
-that students don't feel pressured to use one IDE or another.
+2. Find "target speed" of the tracked lane. Target speed is the maximum speed ego car can achieve without violating speed limit and causing collisions. Target speed is decided by the closest in-front vehicle is closer enough.
 
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
+3. Create trajectory from previous truncated trajectory (derived in 1.), tracked lane, target speed and ego car status:
 
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
+   3.1. Create the reference line, Reference line is composed of 5 points in the order
+   - The last two points from previous truncated trajectory.
+   - Additional 3 (`NUM_REF_STEP`) points with step distance 30.0 (`REF_STEP_S`).
 
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
+   3.2. Convert points in reference line in the coordinate of end pose (last pose from previous truncated trajectory).
 
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
+   3.3. Fits the reference line to a spline so its smoother. 
 
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
+   3.4. Fill waypoints to traectory until it has 50 points. For each point, we calculate the best speed it can achieve without violating the target speed, acceleration limit and jerk limit. This is done by keep incrementing the speed until hits target speed. Multiplying the best speed with delta timestamp 0.02 (`DELTA_T`) we can get the distance moved on the spline. Projects the distance on x-axis with an approximate angle we can get the (x', y') on spline (in the end pose's coodinate). Convert it to world coordinates and add to the trajectory.
 
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+   See `planner.h` line 340 ~ 365.
 
+4. If planner state is `LANE_CHANGING` state, just return the trajectory derived from 3. since we don't want to consider other lanes before completing lane change. DONE.
+
+5. If planner state is `KEEP_LANE` and target speed is good enough, just return the trajectory derived from 3. DONE.
+
+6. Otherwise, we need to prepare lane changing. We will create trajectories for left and right candidate lanes (`track_lane-1` and `track_lane+1`). We only consider candidate lane when lane changing is safe (no collision is caused). This is done by make sure no other vehicle is in a safety region, defined by ego car's position and speed.
+
+7. Select the best trajectory from candidates which has the lowest cost. It gives the best combination of speed, distance traveled and lane flexibility.
+
+8. Update planner's state: change state to `LANE_CHANGING` if the best trajectory's candidate lane is different from current tracked lane.
+
+9. Returns the best trajectory. DONE.
+
+
+## Video
+[YouTube video](https://youtu.be/4e3U17itUlE)
+
+![Screenshot][image1]
